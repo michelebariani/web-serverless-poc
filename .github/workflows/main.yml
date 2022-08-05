@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  lambda-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Package latest app code into zip
+        run: zip -j local.zip python/main.py
+
+      - name: Update AWS lambda code for target environment
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          [[ $BRANCH = "main" ]] && TARGET="welcome-prod" || TARGET="welcome-dev"
+          aws lambda update-function-code --function-name $TARGET --zip-file fileb://local.zip
+        env:
+          AWS_DEFAULT_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
