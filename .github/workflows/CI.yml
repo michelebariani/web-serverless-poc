@@ -7,7 +7,7 @@ on:
       - dev
 
 jobs:
-  lambda-update:
+  reconcile:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,11 +16,17 @@ jobs:
       - name: Package latest app code into zip
         run: zip -j local.zip python/main.py
 
-      - name: Update AWS lambda code for target environment
+      - name: Reconcile target environment
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
-          [[ $BRANCH = "main" ]] && TARGET="welcome-prod" || TARGET="welcome-dev"
-          aws lambda update-function-code --function-name $TARGET --zip-file fileb://local.zip
+          [[ $BRANCH = "main" ]] && WORKSPACE="default" || WORKSPACE=$BRANCH
+          echo workspace: $WORKSPACE
+          export TF_VAR_workspace=$WORKSPACE
+          cd terraform
+          terraform init
+          terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
+          terraform apply -auto-approve
+          echo $(terraform output -json | jq '.infra.value | join(" url: ")') >> $GITHUB_STEP_SUMMARY
         env:
           AWS_DEFAULT_REGION: eu-central-1
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

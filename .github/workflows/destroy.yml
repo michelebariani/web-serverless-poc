@@ -1,0 +1,26 @@
+name: destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Destroy target environment
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          [[ $BRANCH = "main" ]] && WORKSPACE="default" || WORKSPACE=$BRANCH
+          echo workspace: $WORKSPACE
+          export TF_VAR_workspace=$WORKSPACE
+          cd terraform
+          terraform init
+          terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
+          terraform destroy -auto-approve
+        env:
+          AWS_DEFAULT_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

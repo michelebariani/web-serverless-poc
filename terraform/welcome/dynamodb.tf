@@ -14,7 +14,7 @@ resource "aws_dynamodb_table" "this" {
   }
 }
 
-# Initial data, do not update afterwards
+
 resource "aws_dynamodb_table_item" "this" {
   table_name = aws_dynamodb_table.this.name
   hash_key   = aws_dynamodb_table.this.hash_key
@@ -26,7 +26,8 @@ resource "aws_dynamodb_table_item" "this" {
 }
 ITEM
 
-  lifecycle {
-    ignore_changes = [item]
-  }
+  # Enable thew following if you want to set initial data only, with no updates afterwards
+  # lifecycle {
+  #   ignore_changes = [item]
+  # }
 }

@@ -3,6 +3,16 @@
 #
 
 terraform {
+  required_version = "~> 1.2.0"
+
+  backend "s3" {
+    region = "eu-central-1"
+    # You need to change bucket to your own bucket name as they are unique
+    bucket         = "michelebariani-terraform"
+    key            = "state"
+    dynamodb_table = "terraform"
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -15,18 +25,13 @@ terraform {
   }
 }
 
-variable "provider_aws_region" {
-  default = "eu-central-1"
-}
-
-variable "environments" {
-  default = ["dev", "prod"]
+provider "aws" {
+  region = "eu-central-1"
 }
 
 variable "app_source_file" {
   default = "../python/main.py"
 }
 
-variable "create_and_show_github_deploy_secrets" {
-  default = 0
-}
+# This is to be set up as TF_VAR_workspace in the calling environment
+variable "workspace" {}
